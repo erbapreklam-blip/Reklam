@@ -1,0 +1,43 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Kaynak kodu indir
+        uses: actions/checkout@v4
+
+      - name: .NET 8 kurulumu
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: NuGet paketlerini yükle
+        run: dotnet restore ReklamHesap.csproj
+
+      - name: Windows programını derle
+        run: >
+          dotnet publish ReklamHesap.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish
+
+      - name: Program dosyalarını ZIP yap
+        shell: powershell
+        run: |
+          Compress-Archive -Path publish\* -DestinationPath ReklamHesap-Windows.zip
+
+      - name: Windows programını yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: ReklamHesap-Windows
+          path: ReklamHesap-Windows.zip
